@@ -36,7 +36,7 @@ async function renderList(root) {
 }
 
 // Returns the KPI row and the tab panels of a session page.
-function renderSummary(s, turns) {
+function renderSummary(s, turns, subs) {
   const kpi = (label, value, title, cls = '') => `
     <div class="card kpi ${cls}"><div class="label">${label}</div><div class="value" title="${title}">${value}</div></div>`;
   const sum = (k) => s.models.reduce((a, m) => a + (m[k] || 0), 0);
@@ -117,6 +117,17 @@ function renderSummary(s, turns) {
         `<td class="muted">top ${s.top_results.length} of ${fmt.int(s.tool_calls)} calls</td>${tok(add(s.top_results, 'result_tokens'))}`)}
       </div>` },
 
+    { key: 'subagents', label: `Subagents (${subs.dispatches})`, html:
+      table('Subagent runs', `${fmt.usd(subs.subagent_usd)} of this session's ${fmt.usd(subs.total_usd)} (${Math.round(subs.share * 100)}%) was spent in subagents. Newest first.`,
+        '<th>started</th><th>type</th><th>description</th><th class="num">turns</th><th class="num">tokens</th><th class="num">cost</th>',
+        [...subs.top].sort((a, b) => (b.started || '').localeCompare(a.started || '')).map(r => `<tr>
+          <td class="mono">${fmt.htmlSafe((r.started || '').slice(11, 19))}</td>
+          <td class="mono">${fmt.htmlSafe(r.type)}</td>
+          <td class="blur-sensitive" title="${fmt.htmlSafe(r.description)}">${fmt.htmlSafe(fmt.short(r.description || '—', 80))}</td>
+          <td class="num">${fmt.int(r.turns)}</td>${tok(r.tokens)}<td class="num">${fmt.usd(r.cost_usd)}</td></tr>`),
+        'No subagents in this session.',
+        `<td></td><td></td>${num(add(subs.top, 'turns'))}${tok(add(subs.top, 'tokens'))}<td class="num">${fmt.usd(subs.subagent_usd)}</td>`) },
+
     { key: 'files', label: `Files (${s.files.length})`, html:
       table('Files read / written', '', '<th>path</th><th class="num">reads</th><th class="num">writes</th><th class="num">tokens</th>',
         s.files.map(f => `<tr>${name(f.path, 140)}<td class="num">${f.reads || ''}</td><td class="num">${f.writes || ''}</td>${tok(f.result_tokens)}</tr>`),
@@ -152,9 +163,10 @@ function renderSummary(s, turns) {
 }
 
 async function renderSession(root, id) {
-  const [turns, summary] = await Promise.all([
+  const [turns, summary, subs] = await Promise.all([
     api('/api/sessions/' + encodeURIComponent(id)),
     api('/api/sessions/' + encodeURIComponent(id) + '/summary'),
+    api('/api/subagents?session=' + encodeURIComponent(id)),
   ]);
   const slug = (turns[0] && turns[0].project_slug) || '';
   const cwd = (turns.find(t => t.cwd) || {}).cwd || '';
@@ -162,7 +174,7 @@ async function renderSession(root, id) {
   const project = base || slug;
   const started = (turns[0] && turns[0].timestamp) || '';
   const ended = (turns[turns.length-1] && turns[turns.length-1].timestamp) || '';
-  const { kpis, tabs } = renderSummary(summary, turns);
+  const { kpis, tabs } = renderSummary(summary, turns, subs);
   const saved = localStorage.getItem('td.session-tab');
   const active = tabs.some(t => t.key === saved) ? saved : 'overview';
 

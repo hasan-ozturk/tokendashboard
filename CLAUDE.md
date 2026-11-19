@@ -10,12 +10,13 @@ Inspired by [phuryn/claude-usage](https://github.com/phuryn/claude-usage) but di
 
 ## Status
 
-Working codebase. 82 Python unit tests (`python3 -m unittest discover tests`). Seven UI tabs wired up (Overview, Prompts, Sessions, Projects, Skills, Tips, Settings). Runs on macOS, Windows, and Linux.
+Working codebase. 86 Python unit tests (`python3 -m unittest discover tests`). Seven UI tabs wired up (Overview, Prompts, Sessions, Projects, Skills, Tips, Settings). Runs on macOS, Windows, and Linux.
 
 ## Architecture
 
 - `cli.py` → `token_dashboard/scanner.py` → `~/.claude/token-dashboard.db` (SQLite)
 - `token_dashboard/server.py` exposes JSON APIs (`/api/*`) + SSE stream (`/api/stream`) + static frontend (`web/`)
+- `token_dashboard/session_summary.py` (one session from its JSONL: steps, auto-loaded context, files, MCP/URLs, Markdown export), `steps.py` (cost per prompt across sessions), `attribution.py` + `git_outcomes.py` (cost per project/branch with matching commits, cost per subagent)
 - `web/` is vanilla JS, no build step — hash router + ECharts
 
 ## Data source

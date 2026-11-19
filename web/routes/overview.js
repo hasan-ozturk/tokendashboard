@@ -34,13 +34,14 @@ export default async function (root) {
   const range = readRange();
   const since = sinceIso(range);
 
-  const [totals, projects, sessions, tools, daily, byModel] = await Promise.all([
+  const [totals, projects, sessions, tools, daily, byModel, subs] = await Promise.all([
     api(withSince('/api/overview', since)),
     api(withSince('/api/projects', since)),
     api(withSince('/api/sessions?limit=10', since)),
     api(withSince('/api/tools', since)),
     api(withSince('/api/daily', since)),
     api(withSince('/api/by-model', since)),
+    api(withSince('/api/subagents', since)),
   ]);
 
   const cacheCreate =
@@ -132,7 +133,42 @@ export default async function (root) {
         </table>
       </div>
     </div>
+
+    <div class="card" style="margin-top:16px">
+      <h3>Subagents</h3>
+      <p class="muted" style="margin:-4px 0 10px;font-size:12px">${fmt.int(subs.dispatches)} subagent runs cost ${fmt.usd(subs.subagent_usd)},
+        ${Math.round(subs.share * 100)}% of ${fmt.usd(subs.total_usd)} spend in this range. This cost is already part of the totals above, not added to them.</p>
+      ${subs.by_type.length ? `
+      <div class="row cols-2">
+        <div><div id="ch-subagents" style="height:260px"></div></div>
+        <table>
+          <thead><tr><th>type</th><th class="num">runs</th><th class="num">turns</th><th class="num">cost</th><th class="num">avg / run</th></tr></thead>
+          <tbody>${subs.by_type.map(t => `<tr><td class="mono">${fmt.htmlSafe(t.type)}</td><td class="num">${fmt.int(t.dispatches)}</td>
+            <td class="num">${fmt.int(t.turns)}</td><td class="num">${fmt.usd(t.cost_usd)}</td><td class="num">${fmt.usd(t.avg_usd)}</td></tr>`).join('')}</tbody>
+          <tfoot><tr style="font-weight:600;border-top:2px solid #283040"><td>Total</td><td class="num">${fmt.int(subs.dispatches)}</td>
+            <td class="num">${fmt.int(subs.by_type.reduce((a, t) => a + t.turns, 0))}</td><td class="num">${fmt.usd(subs.subagent_usd)}</td><td></td></tr></tfoot>
+        </table>
+      </div>
+      <h3 style="margin-top:16px">Most expensive subagent runs</h3>
+      <table>
+        <thead><tr><th>started</th><th>type</th><th>description</th><th>session</th><th class="num">turns</th><th class="num">cost</th></tr></thead>
+        <tbody>${subs.top.slice(0, 10).map(r => `<tr>
+          <td class="mono">${fmt.htmlSafe((r.started || '').slice(5, 16).replace('T', ' '))}</td>
+          <td class="mono">${fmt.htmlSafe(r.type)}</td>
+          <td class="blur-sensitive" title="${fmt.htmlSafe(r.description)}">${fmt.htmlSafe(fmt.short(r.description || '—', 60))}</td>
+          <td class="blur-sensitive"><a href="#/sessions/${encodeURIComponent(r.session_id)}">${fmt.htmlSafe(fmt.short(r.title || r.session_id.slice(0, 8), 40))}</a></td>
+          <td class="num">${fmt.int(r.turns)}</td><td class="num">${fmt.usd(r.cost_usd)}</td></tr>`).join('')}</tbody>
+      </table>` : '<div class="muted">No subagent runs in this range.</div>'}
+    </div>
   `;
+
+  if (subs.by_type.length) {
+    barChart(document.getElementById('ch-subagents'), {
+      categories: subs.by_type.map(t => t.type),
+      values: subs.by_type.map(t => Math.round(t.cost_usd * 100) / 100),
+      color: '#7C5CFF',
+    });
+  }
 
   // range buttons
   root.querySelectorAll('.range-tabs button').forEach(btn => {

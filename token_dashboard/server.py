@@ -18,6 +18,7 @@ from .db import (
 )
 from .session_summary import summarize, to_markdown
 from .steps import expensive_steps
+from .attribution import branch_costs, subagent_costs
 from .pricing import load_pricing, cost_for, get_plan, set_plan
 from .tips import all_tips, dismiss_tip
 from .scanner import scan_dir
@@ -118,6 +119,14 @@ def build_handler(db_path: str, projects_dir: str):
                     project=qs.get("project", [None])[0], model=qs.get("model", [None])[0],
                     sort=qs.get("sort", ["cost"])[0], limit=_clamp_limit(qs.get("limit", ["100"])[0], 100),
                 ))
+            if path == "/api/branches":
+                return _send_json(self, branch_costs(
+                    db_path, pricing, since=since, until=until, project=qs.get("project", [None])[0],
+                    with_commits=qs.get("commits", ["1"])[0] != "0"))
+            if path == "/api/subagents":
+                return _send_json(self, subagent_costs(
+                    db_path, projects_dir, pricing, since=since, until=until,
+                    session_id=qs.get("session", [None])[0]))
             if path == "/api/projects":
                 return _send_json(self, project_summary(db_path, since, until))
             if path == "/api/tools":

@@ -1,21 +1,43 @@
 # Token Dashboard
 
-Claude Code oturumlarının maliyetini ve bağlamını gösteren yerel bir pano. Her session için şunları görürsün:
+Claude Code oturumlarının maliyetini ve bağlamını gösteren yerel bir pano. Şu sorulara cevap verir:
+- Bu session ne kadar tuttu?
+- Hangi prompt pahalıydı, neden?
+- Bağlama neler girdi?
+- Hangi dosyalar okundu, hangi MCP sunucuları ve URL'ler çağrıldı?
+- Subagent'lar ne harcadı?
+- Bir branch'teki iş kaça mal oldu ve kaç commit üretti?
 
-- Model başına maliyet, input, output ve cache token'ları
-- **Steps:** yazdığın her prompt'un maliyeti, kaç turn sürdüğü ve hangi tool'ları çağırdığı
-- **Auto-loaded:** bağlama kendiliğinden girenler: CLAUDE.md, rules ve hafıza dosyaları, skill'ler, hook çıktıları, MCP talimatları
-- Okunan ve yazılan dosyalar, çağrılan MCP sunucuları ve URL'ler, en büyük tool sonuçları
-- Turn başına bağlam büyüklüğü grafiği
-- Session özetini `.md` olarak dışa aktarma
+Her şey bilgisayarında çalışır. İnternete bağlanmaz, telemetri göndermez, token harcamaz, `pip install` gerektirmez.
 
-**Prompts** sayfası tüm session'lardaki en pahalı adımları listeler. Proje, model ve tarihe göre filtrelenebilir. Bağlamın baştan cache'e yazıldığı adımları ⚠ ile işaretler; bu genelde uzun aradan sonra eski bir session'a dönünce olur.
+## Sayfalar
 
-Her şey bilgisayarında çalışır. Pano yalnızca Claude Code'un `~/.claude/projects/` altına yazdığı transcript dosyalarını okur. İnternete bağlanmaz, token harcamaz, `pip install` gerektirmez.
+| Sayfa | Ne gösterir |
+|---|---|
+| **Overview** | Tarih aralığına göre toplam token ve maliyet, günlük grafikler, model ve proje dağılımı, en çok kullanılan tool'lar. **Subagents** bölümü: türüne göre maliyet (Explore, general-purpose, workflow…) ve en pahalı subagent çalıştırmaları. |
+| **Sessions** | Başlığıyla birlikte session listesi; projeye göre filtrelenebilir. Bir session'a tıklayınca KPI kartları ve sekmeler açılır (aşağıda). |
+| **Prompts** | Tüm session'lardaki en pahalı adımlar: gerçek maliyet, maliyetin nedeni (output / cache read / cache write) ve ⚠ cache rebuild uyarısı. Tarih, proje ve modele göre filtrelenir. |
+| **Projects** | Proje başına token dağılımı. **Cost by project & branch** tablosu: branch başına maliyet, o branch'teki session'lar sırasında atılan commit'ler, eklenen/silinen satır, commit başına maliyet. |
+| **Skills / Tips / Settings** | Skill kullanımı, tasarruf önerileri, plan seçimi. |
+
+**Session sayfasının sekmeleri:**
+
+| Sekme | Ne gösterir |
+|---|---|
+| Overview | Turn başına bağlam büyüklüğü grafiği, model başına maliyet |
+| Steps | Yazdığın her prompt'un maliyeti, kaç turn sürdüğü, hangi tool'ları çağırdığı |
+| Auto-loaded | Sen istemeden bağlama girenler: CLAUDE.md, rules ve hafıza dosyaları, skill'ler, hook çıktıları, MCP talimatları, tool ve skill listeleri |
+| Tools | Tool başına çağrı, hata ve sonuç token'ı; en büyük 10 tool sonucu |
+| Subagents | Session'daki her subagent çalıştırması: türü, açıklaması, maliyeti |
+| Files | Okunan ve yazılan dosyalar |
+| MCP & web | Çağrılan MCP sunucuları ve URL'ler |
+| Turn-by-turn | Her kaydın token dökümü |
+
+Her tablonun altında toplam satırı var. **⬇ export .md** session özetini Markdown dosyası olarak indirir; AI-DLC dokümanlarına doğrudan eklenebilir.
 
 ## Kurulum (Windows)
 
-Python 3 gerekir.
+Python 3 gerekir. Git kuruluysa commit eşleştirmesi de çalışır.
 
 ```powershell
 git clone https://github.com/hasan-ozturk/tokendashboard.git C:\Repos\tokendashboard
@@ -67,10 +89,12 @@ Doğrudan tarayıcıdan da açabilirsin: `http://localhost:8765` (ya da `http://
 
 ## Bilmen gerekenler
 
-- Maliyetler API liste fiyatlarıyla hesaplanır (`pricing.json`). Abonelik planındaysan bu tutarı ayrıca ödemezsin; rakam, API'den kullansaydın ne ödeyeceğini gösterir.
-- Tool sonuçları ve otomatik yüklenen içerik için gösterilen token sayıları tahmindir: karakter sayısı / 4.
-- Yeni turn'ler panoya 30 saniye içinde düşer.
-- Veritabanı `~/.claude/token-dashboard.db` dosyasıdır. Silersen bir sonraki açılışta transcript'ler baştan taranır.
+- **Maliyetler API liste fiyatlarıyla hesaplanır** (`pricing.json`). Abonelik planındaysan bu tutarı ayrıca ödemezsin; rakam, API'den kullansaydın ne ödeyeceğini gösterir.
+- **Bazı token sayıları tahmindir.** Tool sonuçları ve otomatik yüklenen içerik için gösterilen sayılar karakter sayısı / 4 ile hesaplanır.
+- **Commit eşleştirmesi zamana göredir.** Senin git kullanıcının, bir session sırasında ya da session bitiminden sonraki 1 saat içinde attığı commit'ler sayılır. Aynı zaman aralığında elle atılan commit'ler de bu sayıya girer. Satır sayılarına üretilmiş ve kütüphane dosyaları da dahildir.
+- **Cache rebuild:** Bir turn'de bağlamın 100K token'dan fazlası cache'e yeniden yazılırsa ⚠ ile işaretlenir. Bu genelde 1 saatten uzun aradan sonra eski bir session'a dönünce ya da model değiştirince olur. Yeni session açmak ya da önce `/compact` çalıştırmak daha ucuzdur.
+- **Gizlilik:** Pano prompt metinlerini okur ve yerel veritabanında tutar, ama hiçbir yere göndermez. Veritabanı `~/.claude/token-dashboard.db` dosyasıdır; silersen bir sonraki açılışta transcript'ler baştan taranır.
+- **Gecikme:** Yeni turn'ler panoya 30 saniye içinde düşer.
 
 ## Testler
 
@@ -80,15 +104,16 @@ python -m unittest discover -s tests
 
 ## Kaynak
 
-[nateherkai/token-dashboard](https://github.com/nateherkai/token-dashboard) projesinden türetilmiştir (MIT lisansı, bkz. `LICENSE`). Orijinal README: [docs/UPSTREAM_README.md](docs/UPSTREAM_README.md).
+[nateherkai/token-dashboard](https://github.com/nateherkai/token-dashboard) projesinden türetilmiştir (MIT lisansı, bkz. `LICENSE`). Orijinal README: [docs/UPSTREAM_README.md](docs/UPSTREAM_README.md). Branch maliyeti ve subagent kırılımı fikirleri [phuryn/claude-usage](https://github.com/phuryn/claude-usage) ve [xiufengsun/TokenTracker](https://github.com/xiufengsun/TokenTracker) projelerinden alındı.
 
 Bu fork'ta eklenenler:
 - Session özeti, sekmeleri ve dip toplamları
-- Prompt ve adım başına maliyet
+- Prompt ve adım başına maliyet, cache rebuild tespiti
 - Otomatik yüklenen bağlamın dökümü
-- `.md` dışa aktarma
-- Session başlıkları
-- Projeden session'lara filtreli geçiş
+- Proje + branch maliyeti ve commit eşleştirmesi
+- Subagent türüne ve çalıştırmaya göre maliyet
+- `.md` dışa aktarma, session başlıkları, projeden session'lara filtreli geçiş
+- Claude Code skill'i ve Windows kurulum script'i
 - Güncel model fiyatları (Fable, Opus 5.5, Sonnet 5.5, Haiku 5.5)
 - Büyük veritabanlarında tarama hızını düzelten bir index
 - Plan seçiminin tarayıcı yerine veritabanında saklanması
