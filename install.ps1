@@ -71,4 +71,4 @@ if (-not $running) {
 }
 Write-Host ""
 Write-Host "Open: $baseUrl"
-Write-Host "In Claude Code, ask: 'token dashboard' or 'bu session'in maliyeti' to get a link to the current session."
+Write-Host "In Claude Code, ask for the 'token dashboard' or 'what did this session cost' to get a link to the current session."

@@ -1,119 +1,119 @@
 # Token Dashboard
 
-Claude Code oturumlarının maliyetini ve bağlamını gösteren yerel bir pano. Şu sorulara cevap verir:
-- Bu session ne kadar tuttu?
-- Hangi prompt pahalıydı, neden?
-- Bağlama neler girdi?
-- Hangi dosyalar okundu, hangi MCP sunucuları ve URL'ler çağrıldı?
-- Subagent'lar ne harcadı?
-- Bir branch'teki iş kaça mal oldu ve kaç commit üretti?
+A local dashboard for the cost and context of your Claude Code sessions. It answers:
+- What did this session cost?
+- Which prompt was expensive, and why?
+- What went into the context?
+- Which files were read, and which MCP servers and URLs were called?
+- What did the subagents spend?
+- What did the work on a branch cost, and how many commits did it produce?
 
-Her şey bilgisayarında çalışır. İnternete bağlanmaz, telemetri göndermez, token harcamaz, `pip install` gerektirmez.
+Everything runs on your computer. No network calls, no telemetry, no tokens spent, no `pip install`.
 
-## Sayfalar
+## Pages
 
-| Sayfa | Ne gösterir |
+| Page | What it shows |
 |---|---|
-| **Overview** | Tarih aralığına göre toplam token ve maliyet, günlük grafikler, model ve proje dağılımı, en çok kullanılan tool'lar. **Subagents** bölümü: türüne göre maliyet (Explore, general-purpose, workflow…) ve en pahalı subagent çalıştırmaları. |
-| **Sessions** | Başlığıyla birlikte session listesi; projeye göre filtrelenebilir. Bir session'a tıklayınca KPI kartları ve sekmeler açılır (aşağıda). |
-| **Prompts** | Tüm session'lardaki en pahalı adımlar: gerçek maliyet, maliyetin nedeni (output / cache read / cache write) ve ⚠ cache rebuild uyarısı. Tarih, proje ve modele göre filtrelenir. |
-| **Projects** | Proje başına token dağılımı. **Cost by project & branch** tablosu: branch başına maliyet, o branch'teki session'lar sırasında atılan commit'ler, eklenen/silinen satır, commit başına maliyet. |
-| **Skills / Tips / Settings** | Skill kullanımı, tasarruf önerileri, plan seçimi. |
+| **Overview** | Total tokens and cost for a date range, daily charts, split by model and project, top tools. A **Subagents** section shows cost by subagent type (Explore, general-purpose, workflow…) and the most expensive subagent runs. |
+| **Sessions** | Sessions with their titles, filterable by project. Click a session for KPI cards and the tabs below. |
+| **Prompts** | The most expensive steps across all sessions: real cost, what drove it (output, cache read or cache write) and a ⚠ cache-rebuild flag. Filter by date, project and model. |
+| **Projects** | Tokens per project. The **Cost by project & branch** table shows cost per git branch, the commits made during that branch's sessions, lines added and deleted, and cost per commit. |
+| **Skills / Tips / Settings** | Skill usage, saving tips, plan selection. |
 
-**Session sayfasının sekmeleri:**
+**Session page tabs:**
 
-| Sekme | Ne gösterir |
+| Tab | What it shows |
 |---|---|
-| Overview | Turn başına bağlam büyüklüğü grafiği, model başına maliyet |
-| Steps | Yazdığın her prompt'un maliyeti, kaç turn sürdüğü, hangi tool'ları çağırdığı |
-| Auto-loaded | Sen istemeden bağlama girenler: CLAUDE.md, rules ve hafıza dosyaları, skill'ler, hook çıktıları, MCP talimatları, tool ve skill listeleri |
-| Tools | Tool başına çağrı, hata ve sonuç token'ı; en büyük 10 tool sonucu |
-| Subagents | Session'daki her subagent çalıştırması: türü, açıklaması, maliyeti |
-| Files | Okunan ve yazılan dosyalar |
-| MCP & web | Çağrılan MCP sunucuları ve URL'ler |
-| Turn-by-turn | Her kaydın token dökümü |
+| Overview | Context size per turn (chart), cost by model |
+| Steps | Every prompt you typed: its cost, how many turns it took, which tools it called |
+| Auto-loaded | What entered the context without a tool call: CLAUDE.md, rules and memory files, skills, hook output, MCP instructions, tool and skill lists |
+| Tools | Calls, errors and result tokens per tool; the 10 largest tool results |
+| Subagents | Each subagent run in the session: type, description, cost |
+| Files | Files read and written |
+| MCP & web | MCP servers and URLs called |
+| Turn-by-turn | Token counts for every record |
 
-Her tablonun altında toplam satırı var. **⬇ export .md** session özetini Markdown dosyası olarak indirir; AI-DLC dokümanlarına doğrudan eklenebilir.
+Every table ends with a total row. **⬇ export .md** downloads the session summary as a Markdown file, ready to drop into project docs.
 
-## Kurulum (Windows)
+## Install (Windows)
 
-Python 3 gerekir. Git kuruluysa commit eşleştirmesi de çalışır.
+Needs Python 3. With git installed, commit matching works too.
 
 ```powershell
 git clone https://github.com/hasan-ozturk/tokendashboard.git C:\Repos\tokendashboard
 cd C:\Repos\tokendashboard
 .\install.ps1                                   # http://localhost:8765
-.\install.ps1 -HostName tdb.local -AutoStart    # http://tdb.local:8765, Windows açılışında başlar
+.\install.ps1 -HostName tdb.local -AutoStart    # http://tdb.local:8765, starts at Windows logon
 ```
 
-Script şunları yapar:
-1. Claude Code için `token-dashboard` skill'ini `~/.claude/skills/` altına kurar.
-2. `-HostName` verilirse hosts dosyasına bir satır ekler. Bunun için Windows bir kez yönetici izni ister.
-3. `-AutoStart` verilirse Startup klasörüne gizli bir başlatıcı koyar.
-4. Panoyu başlatır.
+The script:
+1. Installs the `token-dashboard` skill for Claude Code into `~/.claude/skills/`.
+2. With `-HostName`, adds one line to the hosts file. Windows asks for admin rights once.
+3. With `-AutoStart`, puts a hidden launcher in the Startup folder.
+4. Starts the dashboard.
 
-İlk açılışta tüm transcript'ler taranır, bu bir dakika kadar sürebilir.
+The first start scans all transcripts, which can take about a minute.
 
-Script `ExecutionPolicy` hatası verirse şöyle çalıştır: `powershell -ExecutionPolicy Bypass -File .\install.ps1`.
+If the script fails with an `ExecutionPolicy` error, run it as `powershell -ExecutionPolicy Bypass -File .\install.ps1`.
 
-## Kurulum (macOS / Linux)
+## Install (macOS / Linux)
 
 ```bash
 cd tokendashboard
 PORT=8765 python3 cli.py dashboard
 ```
 
-Skill'i kullanmak için `skill/token-dashboard/SKILL.md` dosyasını `~/.claude/skills/token-dashboard/SKILL.md` konumuna kopyala ve içindeki `{{...}}` alanlarını doldur:
+To use the skill, copy `skill/token-dashboard/SKILL.md` to `~/.claude/skills/token-dashboard/SKILL.md` and fill in the `{{...}}` fields:
 
-| Alan | Değer |
+| Field | Value |
 |---|---|
-| `{{REPO_DIR}}` | reponun yolu |
+| `{{REPO_DIR}}` | path to this repo |
 | `{{BASE_URL}}` | `http://localhost:8765` |
 | `{{PORT}}` | `8765` |
 | `{{PYTHON}}` | `python3` |
 
-## Kullanım
+## Usage
 
-Claude Code'da "token dashboard" ya da "bu session'ın maliyeti" yaz. Claude panoyu kontrol eder, kapalıysa başlatır ve o anki session'ın linkini verir.
+In Claude Code, ask for the "token dashboard" or "what did this session cost". Claude checks the dashboard, starts it if it is not running, and replies with a link to the current session.
 
-Doğrudan tarayıcıdan da açabilirsin: `http://localhost:8765` (ya da `http://tdb.local:8765`).
+You can also open it in a browser: `http://localhost:8765` (or `http://tdb.local:8765`).
 
-## Neyi görür, neyi görmez
+## What it sees
 
-| Kaynak | Görünür mü |
+| Source | Included |
 |---|---|
-| Claude Code: VS Code ve Cursor eklentisi, terminal (CLI) | Evet |
-| Claude Desktop'taki "Code" sekmesi | Muhtemelen evet (yerelde Claude Code çalıştırıyor) |
-| Claude Desktop ve claude.ai'deki normal sohbetler | Hayır, bu sohbetler yerelde kayıt bırakmıyor |
-| Cursor'ın kendi Chat ve Agent ekranları | Hayır |
+| Claude Code: VS Code and Cursor extension, terminal (CLI) | Yes |
+| The "Code" tab in Claude Desktop | Probably (it runs Claude Code locally) |
+| Regular chats in Claude Desktop and claude.ai | No, they leave no local record |
+| Cursor's own Chat and Agent | No |
 
-## Bilmen gerekenler
+## Good to know
 
-- **Maliyetler API liste fiyatlarıyla hesaplanır** (`pricing.json`). Abonelik planındaysan bu tutarı ayrıca ödemezsin; rakam, API'den kullansaydın ne ödeyeceğini gösterir.
-- **Bazı token sayıları tahmindir.** Tool sonuçları ve otomatik yüklenen içerik için gösterilen sayılar karakter sayısı / 4 ile hesaplanır.
-- **Commit eşleştirmesi zamana göredir.** Senin git kullanıcının, bir session sırasında ya da session bitiminden sonraki 1 saat içinde attığı commit'ler sayılır. Aynı zaman aralığında elle atılan commit'ler de bu sayıya girer. Satır sayılarına üretilmiş ve kütüphane dosyaları da dahildir.
-- **Cache rebuild:** Bir turn'de bağlamın 100K token'dan fazlası cache'e yeniden yazılırsa ⚠ ile işaretlenir. Bu genelde 1 saatten uzun aradan sonra eski bir session'a dönünce ya da model değiştirince olur. Yeni session açmak ya da önce `/compact` çalıştırmak daha ucuzdur.
-- **Gizlilik:** Pano prompt metinlerini okur ve yerel veritabanında tutar, ama hiçbir yere göndermez. Veritabanı `~/.claude/token-dashboard.db` dosyasıdır; silersen bir sonraki açılışta transcript'ler baştan taranır.
-- **Gecikme:** Yeni turn'ler panoya 30 saniye içinde düşer.
+- **Costs use API list prices** (`pricing.json`). On a subscription you do not pay this amount; it shows what the same usage would cost on the API.
+- **Some token counts are estimates.** Tool results and auto-loaded content are counted as characters / 4.
+- **Commit matching is by time.** It counts commits by your git user made during a session on that branch or up to 1 hour after it. Commits made by hand in the same window count too. Line counts include generated and vendored files.
+- **Cache rebuild:** a turn that writes more than 100K tokens of context to the cache again is flagged with ⚠. This usually happens when you return to an old session after more than 1 hour, or switch models. Starting a new session or running `/compact` first is cheaper.
+- **Privacy:** the dashboard reads prompt text and keeps it in a local database, but sends nothing anywhere. The database is `~/.claude/token-dashboard.db`; delete it and the next start rescans the transcripts.
+- **Delay:** new turns show up within 30 seconds.
 
-## Testler
+## Tests
 
 ```bash
 python -m unittest discover -s tests
 ```
 
-## Kaynak
+## Credits
 
-[nateherkai/token-dashboard](https://github.com/nateherkai/token-dashboard) projesinden türetilmiştir (MIT lisansı, bkz. `LICENSE`). Orijinal README: [docs/UPSTREAM_README.md](docs/UPSTREAM_README.md). Branch maliyeti ve subagent kırılımı fikirleri [phuryn/claude-usage](https://github.com/phuryn/claude-usage) ve [xiufengsun/TokenTracker](https://github.com/xiufengsun/TokenTracker) projelerinden alındı.
+Forked from [nateherkai/token-dashboard](https://github.com/nateherkai/token-dashboard) (MIT license, see `LICENSE`). Original README: [docs/UPSTREAM_README.md](docs/UPSTREAM_README.md). The branch cost and subagent ideas come from [phuryn/claude-usage](https://github.com/phuryn/claude-usage) and [xiufengsun/TokenTracker](https://github.com/xiufengsun/TokenTracker).
 
-Bu fork'ta eklenenler:
-- Session özeti, sekmeleri ve dip toplamları
-- Prompt ve adım başına maliyet, cache rebuild tespiti
-- Otomatik yüklenen bağlamın dökümü
-- Proje + branch maliyeti ve commit eşleştirmesi
-- Subagent türüne ve çalıştırmaya göre maliyet
-- `.md` dışa aktarma, session başlıkları, projeden session'lara filtreli geçiş
-- Claude Code skill'i ve Windows kurulum script'i
-- Güncel model fiyatları (Fable, Opus 5.5, Sonnet 5.5, Haiku 5.5)
-- Büyük veritabanlarında tarama hızını düzelten bir index
-- Plan seçiminin tarayıcı yerine veritabanında saklanması
+Added in this fork:
+- Session overview with tabs and total rows
+- Cost per prompt and per step, cache-rebuild detection
+- Breakdown of auto-loaded context
+- Cost per project and git branch, with matching commits
+- Cost per subagent type and run
+- Markdown export, session titles, project-to-sessions filter
+- Claude Code skill and Windows install script
+- Current model prices (Fable, Opus 5.5, Sonnet 5.5, Haiku 5.5)
+- An index that fixes slow scans on large databases
+- Plan selection stored in the database instead of the browser

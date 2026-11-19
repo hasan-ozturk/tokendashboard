@@ -1,6 +1,6 @@
 ---
 name: token-dashboard
-description: Open the local Token Dashboard and give the user a clickable link to the current Claude Code session's cost and context overview. Use when the user asks about session cost, token usage, what was read or loaded into context, which tools, MCP servers or URLs were called, cost per prompt, or says "dashboard", "token dashboard", "tdb", "bu session'ın maliyeti", "token panosu".
+description: Open the local Token Dashboard and give the user a clickable link to the current Claude Code session's cost and context overview. Use when the user asks about session cost, token usage, what was read or loaded into context, which tools, MCP servers or URLs were called, cost per prompt, or mentions "dashboard", "token dashboard" or "tdb". The request may be in any language.
 ---
 
 # Token Dashboard
